@@ -1,0 +1,42 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Common pre-commit checks for this repo
+# 1) TypeScript type-check (no emit)
+# 2) Rust formatting check
+# 3) Optional: build Solana programs quickly to catch obvious issues (skip in CI with SKIP_BUILD=1)
+
+# Stop on first failure
+set -e
+
+# Only run in a git repo with staged changes
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "Not inside a git repository. Skipping pre-commit checks."
+  exit 0
+fi
+
+# TS type check (if tsconfig exists)
+if [ -f "tsconfig.json" ]; then
+  echo "Running TypeScript type-check..."
+  pnpm -s tsc -p tsconfig.json --noEmit
+fi
+
+# Rust formatting check (if Cargo.toml exists)
+if [ -f "Cargo.toml" ]; then
+  echo "Checking Rust formatting (cargo fmt --check)..."
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "cargo not found, skipping Rust checks" >&2
+  else
+    cargo fmt --all -- --check
+  fi
+fi
+
+# Optional lightweight build to catch obvious issues (can be skipped)
+if [ -z "$SKIP_BUILD" ] && [ -f "program/Cargo.toml" ]; then
+  if command -v cargo >/dev/null 2>&1; then
+    echo "Building Solana program workspace (quick check)..."
+    cargo build -q
+  fi
+fi
+
+echo "Pre-commit checks passed."

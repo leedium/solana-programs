@@ -1,0 +1,7 @@
+[workspace]
+members = ["program/basic/hello_world"]
+
+
+[workspace.dependencies]
+solana-program = "2.2.0"
+

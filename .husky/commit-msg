@@ -1,0 +1,41 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Enforce basic Conventional Commits format for commit messages
+# Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+# Examples:
+#   feat: add hello world instruction
+#   fix(program): correct account constraint
+#   chore!: drop Node 14 support
+
+set -e
+
+commit_msg_file="$1"
+msg="$(head -n1 "$commit_msg_file" | tr -d '\r')"
+
+# Allow merge commits and version bumps
+case "$msg" in
+  Merge\ *|Revert\ *|v[0-9]*|chore\(release\)*|chore\(version\)*)
+    exit 0
+  ;;
+ esac
+
+# Basic regex for Conventional Commits
+# type(scope)?: subject
+# Optional breaking change indicator with ! before the colon
+if echo "$msg" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9_.-]+\))?(!)?:\s.{1,}$'; then
+  exit 0
+fi
+
+cat >&2 <<'EOF'
+Invalid commit message format.
+Please use Conventional Commits, for example:
+  feat: add hello world instruction
+  fix(program): correct account constraint
+  chore!: drop Node 14 support
+
+Format: type(scope)?: subject
+Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+EOF
+
+exit 1
